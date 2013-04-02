@@ -5,6 +5,9 @@
 #include "skein.h"
 #include <assert.h>
 
+#define DIFF_THRESHOLD 390
+//Only displays hashes with fewer than DIFF_THRESHOLD different bits
+
 void increment();
 int difference(uint64_t *out);
 unsigned long completed = 0;
@@ -61,7 +64,7 @@ int main(int argc, char** argv)
 		Skein1024_Final(&skein, out);
 
 		int diff = difference((uint64_t*)out);
-		if (diff < 407)
+		if (diff < DIFF_THRESHOLD)
 		{
 			printf("Found ");
 			int i = 0;
