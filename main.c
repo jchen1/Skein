@@ -3,14 +3,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "skein.h"
+#include <assert.h>
 
 void increment();
-int difference(uint8_t *out);
+int difference(uint64_t *out);
 unsigned long completed = 0;
 
 bool done = false;
 
-char in[10] = "20001foVTU";
+char in[10] = "60002E3dBo";
 uint8_t answer[128] = {91, 77, 169, 95, 95, 160, 130, 128,
 	252, 152, 121, 223, 68, 244, 24, 200, 249, 241, 43,
 	164, 36, 183, 117, 125, 224, 43, 189, 251, 174, 13,
@@ -52,7 +53,7 @@ int main()
 		Skein1024_Update(&skein, in, 10);
 		Skein1024_Final(&skein, out);
 
-		int diff = difference(out);
+		int diff = difference((uint64_t*)out);
 		if (diff < 412)
 		{
 			printf("Found ");
@@ -72,28 +73,34 @@ int main()
 
 		increment(9);
 		completed++;
+		//if (completed == 1000000) return; //Used for timing
 		if (!(completed%10000000)) printf("Checked %lu hashes, %s last\n", completed, in);
 	}
 	
 }
 
-int difference(uint8_t *out)
+const uint64_t m1  = 0x5555555555555555; //binary: 0101...
+const uint64_t m2  = 0x3333333333333333; //binary: 00110011..
+const uint64_t m4  = 0x0f0f0f0f0f0f0f0f; //binary:  4 zeros,  4 ones ...
+const uint64_t m8  = 0x00ff00ff00ff00ff; //binary:  8 zeros,  8 ones ...
+const uint64_t m16 = 0x0000ffff0000ffff; //binary: 16 zeros, 16 ones ...
+const uint64_t m32 = 0x00000000ffffffff; //binary: 32 zeros, 32 ones
+const uint64_t hff = 0xffffffffffffffff; //binary: all ones
+const uint64_t h01 = 0x0101010101010101; //the sum of 256 to the power of 0,1,2,3...
+
+int difference(uint64_t *out)
 {
-	int count = 0, i = 0, j = 0;
-		
-	for (i = 0; i < 32; i++)
-	{
-		uint32_t v = ((uint32_t*)answer)[i] ^ ((uint32_t*)out)[i];
-		//MAGIC that gets number of 1s in a 32-bit int
-		//Only works on x64 processors with fast mod division according to
-		//http://graphics.stanford.edu/~seander/bithacks.html
-		uint32_t c =  ((v & 0xfff) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
-		c += (((v & 0xfff000) >> 12) * 0x1001001001001ULL & 0x84210842108421ULL) % 
-		     0x1f;
-		c += ((v >> 24) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
-		count += c;
-	}
+	int count = 0, i = 0;
 	
+	for (i = 0; i < 16; i++)
+	{
+		uint64_t x = ((uint64_t*)answer)[i] ^ out[i];
+		x -= (x >> 1) & m1;             //put count of each 2 bits into those 2 bits
+	    x = (x & m2) + ((x >> 2) & m2); //put count of each 4 bits into those 4 bits 
+	    x = (x + (x >> 4)) & m4;        //put count of each 8 bits into those 8 bits 
+	    count += (x * h01)>>56;  //returns left 8 bits of x + (x<<8) + (x<<16) + (x<<24) + ... 
+	}
+
 	return count;
 }
 
