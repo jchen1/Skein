@@ -3,7 +3,8 @@ Skein
 
 Brute-force a solution for xkcd.com/1193.
 
-To compile: gcc -O2 skein_block.c skein.c main.c -o skein
+To compile in general: gcc -O3 skein_block.c skein.c main.c -o skein
+If you are on Linux x64: gcc -O3 skein_block_x64.s skein.c main.c -o skein
 
 To run: ./skein [string]
 
