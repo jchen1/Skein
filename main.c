@@ -8,10 +8,11 @@
 void increment();
 int difference(uint64_t *out);
 unsigned long completed = 0;
+int length = 0;
 
 bool done = false;
 
-char in[10] = "60002E3dBo";
+char* in;
 uint8_t answer[128] = {91, 77, 169, 95, 95, 160, 130, 128,
 	252, 152, 121, 223, 68, 244, 24, 200, 249, 241, 43,
 	164, 36, 183, 117, 125, 224, 43, 189, 251, 174, 13,
@@ -25,12 +26,18 @@ uint8_t answer[128] = {91, 77, 169, 95, 95, 160, 130, 128,
 	94, 103, 102, 64, 199, 156, 199, 1, 151, 225, 197,
 	231, 249, 2, 251, 83, 202, 24, 88, 182};
 
-int main()
+int main(int argc, char** argv)
 {
 	Skein1024_Ctxt_t skein;
 	
-
+	if (argc != 2)
+	{
+		printf("usage: skein [string]\n");
+		return;
+	}
 	uint8_t out[128];
+	in = argv[1];
+	length = strlen(in);
 
 	/*
 	uint8_t in[10] = {122, 122, 122, 122, 122, 122, 122, 122, 122, 122};
@@ -46,19 +53,19 @@ int main()
 	
 	while (!done) {
 
-		memset(&skein, 0, sizeof(Skein1024_Ctxt_t));
-		memset(out, 0, 128);
+		//memset(&skein, 0, sizeof(Skein1024_Ctxt_t));
+		//memset(out, 0, 128);
 
 		Skein1024_Init(&skein, 1024);
-		Skein1024_Update(&skein, in, 10);
+		Skein1024_Update(&skein, in, length);
 		Skein1024_Final(&skein, out);
 
 		int diff = difference((uint64_t*)out);
-		if (diff < 412)
+		if (diff < 407)
 		{
 			printf("Found ");
 			int i = 0;
-			for (i = 0; i < 10; i++)
+			for (i = 0; i < length; i++)
 			{
 				printf("%c", in[i]);
 			}
@@ -71,7 +78,7 @@ int main()
 			printf(" with %d bits off\n", diff);
 		}
 
-		increment(9);
+		increment(length - 1);
 		completed++;
 		//if (completed == 1000000) return; //Used for timing
 		if (!(completed%10000000)) printf("Checked %lu hashes, %s last\n", completed, in);
