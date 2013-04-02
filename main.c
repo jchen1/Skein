@@ -6,11 +6,11 @@
 
 void increment();
 int difference(uint8_t *out);
-unsigned int completed = 0;
+unsigned long completed = 0;
 
 bool done = false;
 
-char in[10] = "7000000000";
+char in[10] = "20001foVTU";
 uint8_t answer[128] = {91, 77, 169, 95, 95, 160, 130, 128,
 	252, 152, 121, 223, 68, 244, 24, 200, 249, 241, 43,
 	164, 36, 183, 117, 125, 224, 43, 189, 251, 174, 13,
@@ -30,6 +30,7 @@ int main()
 	
 
 	uint8_t out[128];
+
 	/*
 	uint8_t in[10] = {122, 122, 122, 122, 122, 122, 122, 122, 122, 122};
 	Skein1024_Init(&skein, 1024);
@@ -52,7 +53,7 @@ int main()
 		Skein1024_Final(&skein, out);
 
 		int diff = difference(out);
-		if (diff < 420)
+		if (diff < 412)
 		{
 			printf("Found ");
 			int i = 0;
@@ -60,12 +61,7 @@ int main()
 			{
 				printf("%c", in[i]);
 			}
-			printf(" with ASCII representation {%d", in[0]);
-			for (i = 1; i < 10; i++)
-			{
-				printf(", %d", in[i]);
-			}
-			printf("}\n");
+			
 			printf(" with hash ");
 			for (i = 0; i < 128; i++)
 			{
@@ -76,7 +72,7 @@ int main()
 
 		increment(9);
 		completed++;
-		if (!(completed%1000000)) printf("Finished %d hashes, last checked is %s\n", completed, in);
+		if (!(completed%10000000)) printf("Checked %lu hashes, %s last\n", completed, in);
 	}
 	
 }
@@ -84,16 +80,20 @@ int main()
 int difference(uint8_t *out)
 {
 	int count = 0, i = 0, j = 0;
-	for (i = 0; i < 128; i++)
+		
+	for (i = 0; i < 32; i++)
 	{
-		uint8_t ans = answer[i];
-		uint8_t cmp = out[i];
-
-		for (j = 0; j < 8; j++)
-		{
-			if (((ans >> j) & 1) != ((cmp >> j) & 1)) count++;
-		}
+		uint32_t v = ((uint32_t*)answer)[i] ^ ((uint32_t*)out)[i];
+		//MAGIC that gets number of 1s in a 32-bit int
+		//Only works on x64 processors with fast mod division according to
+		//http://graphics.stanford.edu/~seander/bithacks.html
+		uint32_t c =  ((v & 0xfff) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
+		c += (((v & 0xfff000) >> 12) * 0x1001001001001ULL & 0x84210842108421ULL) % 
+		     0x1f;
+		c += ((v >> 24) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
+		count += c;
 	}
+	
 	return count;
 }
 
