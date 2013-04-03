@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 		Skein1024_Final(&skein, out);
 
 		int diff = difference((uint64_t*)out);
-		if (diff < DIFF_THRESHOLD)
+		if (diff < DIFF_THRESHOLD)	//Only display hash if you have a small difference
 		{
 			printf("Found ");
 			int i = 0;
@@ -89,6 +89,7 @@ int main(int argc, char** argv)
 	
 }
 
+//Constants used for fast difference
 const uint64_t m1  = 0x5555555555555555; //binary: 0101...
 const uint64_t m2  = 0x3333333333333333; //binary: 00110011..
 const uint64_t m4  = 0x0f0f0f0f0f0f0f0f; //binary:  4 zeros,  4 ones ...
@@ -98,6 +99,7 @@ const uint64_t m32 = 0x00000000ffffffff; //binary: 32 zeros, 32 ones
 const uint64_t hff = 0xffffffffffffffff; //binary: all ones
 const uint64_t h01 = 0x0101010101010101; //the sum of 256 to the power of 0,1,2,3...
 
+//Quickly determines number of differing bits using Wikipedia's Hamming algorithm
 int difference(uint64_t *out)
 {
 	int count = 0, i = 0;
@@ -114,6 +116,7 @@ int difference(uint64_t *out)
 	return count;
 }
 
+//Increments the string, keep in alphanumeric.
 void increment(int digit)
 {
 	in[digit]++;
